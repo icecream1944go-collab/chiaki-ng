@@ -20,15 +20,29 @@ jobs:
       - name: Create Build Directory
         run: mkdir -p .build
 
-            # 3. تشغيل الحاوية الأصلية وتوجيهها لاستخدام Java 11
+                  # 3. تشغيل الحاوية الأصلية والبحث عن مسار الجافا الصحيح تلقائياً
       - name: Run Docker Build
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/home/build/chiaki \
             -w /home/build/chiaki/android \
-            -e JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 \
             thestr4ng3r/android:b2853cc \
-            /bin/bash -c "export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 && ./gradlew assembleRelease bundleRelease"
+            /bin/bash -c "
+              # البحث عن أي مسار جافا متاح داخل الحاوية وتعيينه
+              if [ -d '/usr/lib/jvm/java-11-openjdk' ]; then
+                export JAVA_HOME='/usr/lib/jvm/java-11-openjdk'
+              elif [ -d '/usr/lib/jvm/default-jvm' ]; then
+                export JAVA_HOME='/usr/lib/jvm/default-jvm'
+              else
+                # إذا لم يجد مساراً مخصصاً، سيبحث عن مسار الجافا التنفيذي الفعلي
+                export JAVA_HOME=\$(dirname \$(dirname \$(readlink -f \$(which javac 2>/dev/null || which java))))
+              fi
+              
+              echo 'تم تحديد JAVA_HOME على المسار: '\$JAVA_HOME
+              
+              # تشغيل البناء
+              ./gradlew assembleRelease bundleRelease
+            "
 
 
       # 4. نقل الملفات الناتجة إلى مجلد .build داخل السيرفر
