@@ -1,0 +1,44 @@
+name: Chiaki Android Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # تتيح لك زر التشغيل اليدوي من الموقع
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # بيئة الجيت هاب تحتوي على Docker مسبقاً
+
+    steps:
+      # 1. جلب كود المستودع
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. إنشاء مجلد .build المستهدف
+      - name: Create Build Directory
+        run: mkdir -p .build
+
+      # 3. تشغيل الحاوية الأصلية وبناء التطبيق (نفس طريقتك الأصلية تماماً)
+      - name: Run Docker Build
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/home/build/chiaki \
+            -w /home/build/chiaki/android \
+            thestr4ng3r/android:b2853cc \
+            /bin/bash -c "./gradlew assembleRelease bundleRelease"
+
+      # 4. نقل الملفات الناتجة إلى مجلد .build داخل السيرفر
+      - name: Move Artifacts to .build
+        run: |
+          cp android/app/build/outputs/apk/release/app-release*.apk .build/Chiaki.apk
+          cp android/app/build/outputs/bundle/release/app-release*.aab .build/Chiaki.aab
+
+      # 5. رفع الملفات الناتجة لتستطيع تحميلها من الـ Actions
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chiaki-Builds
+          path: .build/
+          
