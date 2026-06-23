@@ -20,14 +20,16 @@ jobs:
       - name: Create Build Directory
         run: mkdir -p .build
 
-      # 3. تشغيل الحاوية الأصلية وبناء التطبيق (نفس طريقتك الأصلية تماماً)
+            # 3. تشغيل الحاوية الأصلية وتوجيهها لاستخدام Java 11
       - name: Run Docker Build
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/home/build/chiaki \
             -w /home/build/chiaki/android \
+            -e JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 \
             thestr4ng3r/android:b2853cc \
-            /bin/bash -c "./gradlew assembleRelease bundleRelease"
+            /bin/bash -c "export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 && ./gradlew assembleRelease bundleRelease"
+
 
       # 4. نقل الملفات الناتجة إلى مجلد .build داخل السيرفر
       - name: Move Artifacts to .build
